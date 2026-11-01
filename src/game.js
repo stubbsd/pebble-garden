@@ -119,10 +119,10 @@
     var grd = g.createLinearGradient(px, py, px, py + h); grd.addColorStop(0, LIGHT[b.c]); grd.addColorStop(0.55, COLOURS[b.c]); grd.addColorStop(1, DARK[b.c]);
     g.fillStyle = grd; rr(g, px, py, w, h, r); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.28)'; rr(g, px + w * 0.14, py + C * 0.07, w * 0.5, C * 0.1, C * 0.05); g.fill();
-    var cx = px + w / 2, cy = py + h / 2;
+    var cx = px + w / 2, cy = py + h / 2, blink = (t + blinkT[i]) % 4.2 < 0.12;
+    if (b.a !== undefined) { Animals.draw(g, b.a, cx, cy, C, look, blink, t + blinkT[i]); symbol(b.c, px + w - C * 0.17, py + h - C * 0.17, C * 0.2, 'rgba(255,255,255,0.95)'); g.restore(); return; }
     symbol(b.c, cx, cy + C * 0.12, C * 0.32, 'rgba(255,255,255,0.95)');
-    // eyes
-    var blink = (t + blinkT[i]) % 4.2 < 0.12, ey = cy - C * 0.17, ex = C * 0.12, lx = look[0] * C * 0.035, ly = look[1] * C * 0.035;
+    var ey = cy - C * 0.17, ex = C * 0.12, lx = look[0] * C * 0.035, ly = look[1] * C * 0.035;
     for (var s = -1; s <= 1; s += 2) {
       if (blink) { g.strokeStyle = '#1b1f33'; g.lineWidth = C * 0.03; g.beginPath(); g.moveTo(cx + s * ex - C * 0.04, ey); g.lineTo(cx + s * ex + C * 0.04, ey); g.stroke(); continue; }
       g.fillStyle = '#fff'; g.beginPath(); g.arc(cx + s * ex, ey, C * 0.07, 0, 7); g.fill();
@@ -144,7 +144,7 @@
     for (i = 0; i < L.blocks.length; i++) {
       if (!state[i]) continue;
       var v = vis[i], tx = state[i][0], ty = state[i][1], look = [0, 0];
-      if (drag && drag.i === i && drag.axis !== null) { tx += drag.axis === 0 ? drag.off : 0; ty += drag.axis === 1 ? drag.off : 0; v.x = tx; v.y = ty; look = drag.axis === 0 ? [Math.sign(drag.off), 0] : [0, Math.sign(drag.off)]; }
+      if (drag && drag.i === i) { var kd = Math.min(1, dt * 35); v.x += (tx + drag.ox - v.x) * kd; v.y += (ty + drag.oy - v.y) * kd; look = [Math.sign(drag.ox), Math.sign(drag.oy)]; }
       else { var kk = Math.min(1, dt * 20); v.x += (tx - v.x) * kk; v.y += (ty - v.y) * kk; }
       var sc = drag && drag.i === i ? 1.05 : 1;
       drawBlock(i, v.x, v.y, 1, sc, look, t);
@@ -155,11 +155,13 @@
     for (i = sparks.length - 1; i >= 0; i--) { var sp = sparks[i]; sp.t += dt; if (sp.t > sp.life) { sparks.splice(i, 1); continue; }
       sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.vy += sp.gy * dt; sp.rot += dt * sp.vr;
       g.save(); g.globalAlpha = 1 - sp.t / sp.life; g.translate(sp.x, sp.y); g.rotate(sp.rot); g.fillStyle = sp.c;
-      if (sp.petal) { g.beginPath(); g.ellipse(0, 0, sp.s, sp.s * 0.55, 0, 0, 7); g.fill(); } else { g.fillRect(-sp.s / 2, -sp.s / 2, sp.s, sp.s); }
+      if (sp.heart) { symbol(4, 0, 0, sp.s * 2, sp.c); } else if (sp.petal) { g.beginPath(); g.ellipse(0, 0, sp.s, sp.s * 0.55, 0, 0, 7); g.fill(); } else { g.fillRect(-sp.s / 2, -sp.s / 2, sp.s, sp.s); }
       g.restore(); }
   }
   function burst(r, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.28, v = 60 + Math.random() * 120;
     sparks.push({ x: r.x + r.w / 2, y: r.y + r.h / 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, gy: 60, t: 0, life: 0.6 + Math.random() * 0.3, c: Math.random() < 0.5 ? '#fff6c8' : col, s: 3 + Math.random() * 4, rot: 0, vr: 6 }); } }
+  function hearts(x, y) { for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, v = 90 + Math.random() * 90;
+    sparks.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, gy: 40, t: 0, life: 0.9 + Math.random() * 0.4, c: ['#ff8fb1', '#ffd84a', '#fff'][i % 3], s: 6 + Math.random() * 4, rot: 0, vr: 0, heart: true }); } }
   function petals() { for (var i = 0; i < 70; i++) sparks.push({ x: Math.random() * W, y: -20 - Math.random() * H * 0.4, vx: (Math.random() - 0.5) * 40, vy: 60 + Math.random() * 80, gy: 10,
     t: 0, life: 3 + Math.random() * 1.5, c: COLOURS[i % 5], s: 6 + Math.random() * 6, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 6, petal: true }); }
 
@@ -201,49 +203,56 @@
       if (d < bd || (d === 0 && bd > 0)) { bd = d; best = i; if (d === 0) break; } }
     return best;
   }
-  function limits(i) {
-    var o = Engine.occ(P, state, i), r = {};
-    [0, 1, 2, 3].forEach(function (d) { r[d] = { max: Engine.maxSlide(P, state, i, d, o), exit: Engine.exitFor(P, state, i, d, o) >= 0 }; });
-    return r;
+  // Free drag: while the finger is down the block follows it cell by cell along rows and columns,
+  // turning corners whenever there is room. Each cell change is one engine step, so play matches the solver.
+  function tryStep(i, dir) {
+    var n = Engine.step(P, state, i, dir); if (!n) return null;
+    if (!drag.changed) { pushUndo(); drag.changed = true; }
+    state = n; return n[i] ? 'move' : 'leave';
   }
+  function room(i, dir) { var n = Engine.step(P, state, i, dir); return !n ? 0.08 : n[i] ? 0.45 : 0.7; }
   cv.addEventListener('pointerdown', function (ev) {
     Sfx.init();
     if (!playing || won || drag) return;
     var c = cellAt(ev.clientX, ev.clientY), i = blockAt(c[0], c[1]); if (i < 0) return;
     try { cv.setPointerCapture(ev.pointerId); } catch (e) {}
-    drag = { id: ev.pointerId, i: i, sx: ev.clientX, sy: ev.clientY, axis: null, off: 0, lim: limits(i), hist: [[performance.now(), 0]] };
+    drag = { id: ev.pointerId, i: i, gx: c[0], gy: c[1], sx: state[i][0], sy: state[i][1], ox: 0, oy: 0, changed: false };
   });
   cv.addEventListener('pointermove', function (ev) {
     if (!drag || ev.pointerId !== drag.id) return;
-    var dx = (ev.clientX - drag.sx) / C, dy = (ev.clientY - drag.sy) / C;
-    if (drag.axis === null) { if (Math.max(Math.abs(dx), Math.abs(dy)) < 0.12) return; drag.axis = Math.abs(dx) > Math.abs(dy) ? 0 : 1; }
-    var raw = drag.axis === 0 ? dx : dy, pos = drag.lim[drag.axis === 0 ? 1 : 2], neg = drag.lim[drag.axis === 0 ? 3 : 0];
-    var hiL = pos.max + (pos.exit ? 1.4 : 0), loL = -(neg.max + (neg.exit ? 1.4 : 0)), off = raw;
-    if (off > hiL) off = hiL + Math.min(0.15, (off - hiL) * 0.2); if (off < loL) off = loL - Math.min(0.15, (loL - off) * 0.2);
-    drag.off = off; drag.hist.push([performance.now(), off]); if (drag.hist.length > 6) drag.hist.shift();
+    var i = drag.i, c = cellAt(ev.clientX, ev.clientY), wx = drag.sx + c[0] - drag.gx, wy = drag.sy + c[1] - drag.gy;
+    for (var guard = 0; guard < 40; guard++) {
+      var cur = state[i], dx = wx - cur[0], dy = wy - cur[1], stepped = false;
+      var order = Math.abs(dx) >= Math.abs(dy) ? [[dx, 0], [dy, 1]] : [[dy, 1], [dx, 0]];
+      for (var k = 0; k < 2 && !stepped; k++) {
+        var d = order[k][0], ax = order[k][1]; if (Math.abs(d) < 0.5) continue;
+        var dir = ax === 0 ? (d > 0 ? 1 : 3) : (d > 0 ? 2 : 0);
+        if (Engine.canLeave(P, state, i, dir) >= 0 && Math.abs(d) < 0.65) continue; // leaving needs a firm push
+        var from = state[i], r = tryStep(i, dir);
+        if (r === 'leave') { leave(i, from, dir); return; }
+        if (r) { stepped = true; Sfx.tick(); }
+      }
+      if (!stepped) break;
+    }
+    cur = state[i]; dx = wx - cur[0]; dy = wy - cur[1];
+    if (Math.abs(dx) >= Math.abs(dy)) { drag.ox = Math.sign(dx) * Math.min(Math.abs(dx), room(i, dx > 0 ? 1 : 3)); drag.oy = 0; }
+    else { drag.oy = Math.sign(dy) * Math.min(Math.abs(dy), room(i, dy > 0 ? 2 : 0)); drag.ox = 0; }
   });
+  function leave(i, from, dir) {
+    var D = DIRS[dir], b = L.blocks[i];
+    moves++; drag = null;
+    flyers.push({ i: i, x: vis[i].x, y: vis[i].y, d: D, t: 0 });
+    Sfx.whoosh();
+    if (b.a !== undefined) { Sfx.squeak(b.a); hearts(ox + (from[0] + b.w / 2) * C, oy + (from[1] + b.h / 2) * C); }
+    checkWin();
+  }
   function endDrag(ev) {
     if (!drag || ev.pointerId !== drag.id) return;
-    var d = drag; drag = null; if (d.axis === null) return;
-    var h0 = d.hist[0], h1 = d.hist[d.hist.length - 1], vel = (h1[1] - h0[1]) / Math.max(0.016, (h1[0] - h0[0]) / 1000);
-    var sgn = d.off >= 0 ? 1 : -1, dir = d.axis === 0 ? (sgn > 0 ? 1 : 3) : (sgn > 0 ? 2 : 0), lim = d.lim[dir];
-    var flick = !window.__noFlick && Math.abs(vel) > 7 && Math.sign(vel) === sgn;
-    var i = d.i, dist = Math.abs(d.off);
-    if (lim.exit && (dist > lim.max + 0.35 || (flick && dist > lim.max - 0.6))) {
-      pushUndo(); moves++;
-      var D = DIRS[dir]; state = state.slice();
-      var fx = state[i][0] + D[0] * lim.max, fy = state[i][1] + D[1] * lim.max;
-      flyers.push({ i: i, x: fx + D[0] * Math.max(0, dist - lim.max), y: fy + D[1] * Math.max(0, dist - lim.max), d: D, t: 0 });
-      state[i] = null; Sfx.whoosh(); checkWin(); return;
-    }
-    var k = flick ? lim.max : Math.min(lim.max, Math.round(dist));
-    if (k > 0) {
-      pushUndo(); moves++; state = state.slice(); state[i] = [state[i][0] + DIRS[dir][0] * k, state[i][1] + DIRS[dir][1] * k];
-      vis[i] = { x: vis[i].x, y: vis[i].y }; Sfx.snap();
-    } else if (dist > 0.2) Sfx.bump();
+    var d = drag; drag = null;
+    if (d.changed) { moves++; Sfx.snap(); checkWin(); } else if (Math.abs(d.ox) + Math.abs(d.oy) > 0.05) Sfx.bump();
   }
   cv.addEventListener('pointerup', endDrag);
-  cv.addEventListener('pointercancel', function (ev) { if (drag && ev.pointerId === drag.id) drag = null; });
+  cv.addEventListener('pointercancel', endDrag);
   ['gesturestart', 'gesturechange', 'dblclick'].forEach(function (n) { document.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false }); });
   document.addEventListener('touchmove', function (e) { if (e.target === cv) e.preventDefault(); }, { passive: false });
 

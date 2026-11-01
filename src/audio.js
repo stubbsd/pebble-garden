@@ -32,6 +32,8 @@ var Sfx = (function () {
     unlock: function () { tone(660, 0, 0.25, 0.18, 'triangle'); tone(990, 0.12, 0.4, 0.18, 'triangle'); },
     win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.5, 0.16, 'triangle'); }); tone(1568, 0.6, 0.8, 0.06, 'sine'); },
     star: function (i) { tone(880 + i * 220, 0, 0.3, 0.12, 'sine'); },
+    tick: function () { tone(620, 0, 0.04, 0.05, 'sine', 520); },
+    squeak: function (a) { var b = 700 + (a || 0) * 60; tone(b, 0, 0.12, 0.12, 'sine', b * 1.6); tone(b * 1.25, 0.1, 0.14, 0.1, 'sine', b * 1.9); },
     tap: function () { tone(520, 0, 0.06, 0.12, 'sine', 600); }
   };
 })();
