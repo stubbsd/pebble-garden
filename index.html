@@ -28,9 +28,20 @@
 <div id="map" class="screen">
   <div id="mapTop">
     <div class="title-pebbles"><i class="c0"></i><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i></div>
-    <button id="btnSound" class="round" aria-label="Sound on or off"><svg viewBox="0 0 24 24"><path d="M4 9.5h4L13 5v14l-5-4.5H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg></button>
+    <div class="topBtns"><button id="btnReset" class="pill" aria-label="Reset progress"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5"/><path d="M19 4v4.5h-4.5"/></svg>Reset</button>
+    <button id="btnSound" class="round" aria-label="Sound on or off"><svg viewBox="0 0 24 24"><path d="M4 9.5h4L13 5v14l-5-4.5H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg></button></div>
   </div>
   <div id="mapScroll"><div id="mapPath"></div></div>
+</div>
+
+<div id="confirm" class="hidden" role="dialog" aria-modal="true" aria-labelledby="confirmText">
+  <div class="card">
+    <div id="confirmText">Reset all progress?<small>Stars and unlocked levels will be cleared.</small></div>
+    <div class="row">
+      <button id="resetNo" class="round big" aria-label="No, keep progress"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <button id="resetYes" class="round big warn" aria-label="Yes, reset"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></svg></button>
+    </div>
+  </div>
 </div>
 
 <div id="win" class="hidden">

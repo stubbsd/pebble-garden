@@ -47,3 +47,17 @@ button { font:inherit; color:inherit; border:0; padding:0; background:none; curs
 .round.go { background:linear-gradient(#5fd98c,#34a862); box-shadow:0 6px 0 #1f6b3c, 0 0 26px rgba(95,217,140,.6); animation:breathe 1.4s ease-in-out infinite; }
 @keyframes breathe { 50% { transform:scale(1.07); } }
 @media (max-height:500px) { .round { width:56px; height:56px; } #hud .badge { height:58px; font-size:40px; min-width:80px; } }
+
+.topBtns { display:flex; gap:12px; align-items:center; }
+.pill { height:52px; padding:0 18px 0 12px; border-radius:26px; display:flex; gap:6px; align-items:center; font-size:18px; font-weight:800; color:var(--cream);
+  background:linear-gradient(#2a4378,#1b2c57); box-shadow:0 4px 0 #0b1430, inset 0 2px 0 rgba(255,255,255,.15); }
+.pill svg { width:26px; height:26px; fill:none; stroke:var(--cream); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+.pill:active { transform:translateY(3px); box-shadow:0 1px 0 #0b1430; }
+#confirm { position:fixed; inset:0; z-index:5; display:grid; place-items:center; background:rgba(8,14,36,.6); }
+#confirm .card { max-width:min(92vw,420px); padding:26px; border-radius:32px; text-align:center; background:linear-gradient(#24407a,#162a55); box-shadow:0 0 0 4px rgba(255,243,214,.7); animation:pop .35s cubic-bezier(.3,1.6,.5,1); }
+#confirmText { font-size:26px; font-weight:900; margin-bottom:22px; }
+#confirmText small { display:block; font-size:16px; font-weight:600; opacity:.8; margin-top:8px; }
+#confirm .row { display:flex; gap:28px; justify-content:center; }
+.round.warn { background:linear-gradient(#ff8a7d,#e2523f); box-shadow:0 5px 0 #8f2b20; }
+@media (max-width: 460px) { .title-pebbles { gap:5px !important; } .title-pebbles > * { width:22px !important; height:22px !important; } .pill { padding:0 14px 0 10px; } }
+@media (max-width: 360px) { .title-pebbles { display:none !important; } }

@@ -265,6 +265,14 @@
   $('winNext').addEventListener('click', guard(function () { start(Math.min(LEVELS.length - 1, lvlIdx + 1)); }));
   $('btnSound').addEventListener('click', guard(function () { document.body.classList.toggle('muted', Sfx.toggle()); Sfx.tap(); }));
   document.body.classList.toggle('muted', Sfx.isMuted());
+  // Reset progress (parent control on the map). Mute setting is stored separately and kept.
+  $('btnReset').addEventListener('click', guard(function () { Sfx.tap(); $('confirm').classList.remove('hidden'); }));
+  $('resetNo').addEventListener('click', guard(function () { Sfx.tap(); $('confirm').classList.add('hidden'); }));
+  $('resetYes').addEventListener('click', guard(function () {
+    try { localStorage.removeItem(SAVE); } catch (e) {}
+    save = { stars: {} }; L = null; $('confirm').classList.add('hidden'); Sfx.unlock(); show('map');
+    $('mapScroll').scrollTop = 0;
+  }));
 
   // ---------- level map ----------
   function buildMap() {
