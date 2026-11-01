@@ -1,5 +1,5 @@
-:root { --bg1:#0f1a3d; --bg2:#173257; --cream:#fff3d6; --ink:#16224a;
-  --c0:#ff6b5b; --c1:#ffc93c; --c2:#3fa7f5; --c3:#4cc67a; --c4:#a47bea;
+:root { --bg1:#1d4f9e; --bg2:#3b7fd6; --cream:#fff3d6; --ink:#16224a;
+  --c0:#f2443a; --c1:#ffc81f; --c2:#2e8cf0; --c3:#36c25a; --c4:#a05ce8;
   --st:env(safe-area-inset-top,0px); --sr:env(safe-area-inset-right,0px); --sb:env(safe-area-inset-bottom,0px); --sl:env(safe-area-inset-left,0px);
   font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
@@ -19,7 +19,7 @@ button { font:inherit; color:inherit; border:0; padding:0; background:none; curs
 #hud .badge { justify-self:center; min-width:96px; height:72px; padding:0 22px; border-radius:36px; background:linear-gradient(#22396b,#14244a);
   box-shadow:0 0 0 3px rgba(255,243,214,.6), 0 0 24px rgba(120,180,255,.3); font-size:50px; font-weight:900; display:grid; place-items:center; line-height:1; pointer-events:none; }
 #hud #btnRestart { grid-column:4; }
-.screen { position:fixed; inset:0; z-index:3; display:flex; flex-direction:column; background:radial-gradient(ellipse at 50% 0%, #1f4a6b, var(--bg1) 75%); }
+.screen { position:fixed; inset:0; z-index:3; display:flex; flex-direction:column; background:radial-gradient(ellipse at 50% 0%, #2f6cc0, #12306b 80%); }
 #mapTop { display:flex; justify-content:space-between; align-items:center; padding:calc(var(--st) + 12px) calc(var(--sr) + 16px) 8px calc(var(--sl) + 16px); }
 .title-pebbles { display:flex; gap:8px; }
 .title-pebbles i { width:34px; height:34px; border-radius:11px; box-shadow:inset 0 -4px 0 rgba(0,0,0,.18); }

@@ -1,9 +1,9 @@
 // Pebble Garden: rendering, input, screens. Depends on Engine, LEVELS, Sfx.
 (function () {
   'use strict';
-  var COLOURS = ['#ff6b5b', '#ffc93c', '#3fa7f5', '#4cc67a', '#a47bea'];
-  var DARK = ['#d9473a', '#e0a417', '#1f84d4', '#2f9f58', '#7f57c9'];
-  var LIGHT = ['#ff9a8e', '#ffe07f', '#86c9ff', '#86e0a6', '#c7a8f5'];
+  var COLOURS = ['#f2443a', '#ffc81f', '#2e8cf0', '#36c25a', '#a05ce8'];
+  var DARK = ['#b52a22', '#c98f00', '#1a5fb3', '#1f8a3c', '#6d36b0'];
+  var LIGHT = ['#ff8a7f', '#ffe27a', '#7cc0ff', '#7fe39a', '#c9a0ff'];
   var SAVE = 'pebbleGarden.v1';
   var DIRS = Engine.DIRS;
 
@@ -40,17 +40,18 @@
     var c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height;
     var k = c.getContext('2d'); k.scale(DPR, DPR);
     var x, y, wall = Math.max(5, C * 0.11);
-    // glow + cream frame: draw every floor cell inflated, then floor on top
-    k.save(); k.shadowColor = 'rgba(110,190,255,0.55)'; k.shadowBlur = C * 0.5; k.fillStyle = '#fff3d6';
-    for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) { rr(k, ox + x * C - wall, oy + y * C - wall, C + wall * 2, C + wall * 2, wall * 1.6); k.fill(); }
+    // chunky steel-blue tray, dark navy floor, faint grid lines
+    k.save(); k.shadowColor = 'rgba(0,10,40,0.6)'; k.shadowBlur = C * 0.4; k.shadowOffsetY = C * 0.08; k.fillStyle = '#5f86c9';
+    for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) { rr(k, ox + x * C - wall, oy + y * C - wall, C + wall * 2, C + wall * 2, wall * 1.2); k.fill(); }
     k.restore();
-    k.fillStyle = '#fff3d6';
-    for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) { rr(k, ox + x * C - wall, oy + y * C - wall, C + wall * 2, C + wall * 2, wall * 1.6); k.fill(); }
-    k.fillStyle = '#d9c9a3'; // inner bevel line
-    for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) { k.fillRect(ox + x * C - wall * 0.35, oy + y * C - wall * 0.35, C + wall * 0.7, C + wall * 0.7); }
+    k.fillStyle = '#9db8e6';
+    for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) { rr(k, ox + x * C - wall, oy + y * C - wall, C + wall * 2, C + wall * 1.4, wall * 1.2); k.fill(); }
+    k.fillStyle = '#4a6fb3';
+    for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) { k.fillRect(ox + x * C - wall * 0.3, oy + y * C - wall * 0.3, C + wall * 0.6, C + wall * 0.6); }
     for (y = 0; y < L.h; y++) for (x = 0; x < L.w; x++) if (Engine.isFloor(P, x, y)) {
-      k.fillStyle = (x + y) % 2 ? '#1a2b5c' : '#1d3064'; k.fillRect(ox + x * C, oy + y * C, C + 0.5, C + 0.5);
-      k.fillStyle = 'rgba(255,255,255,0.05)'; rr(k, ox + x * C + C * 0.1, oy + y * C + C * 0.1, C * 0.8, C * 0.8, C * 0.18); k.fill();
+      k.fillStyle = '#122450'; k.fillRect(ox + x * C, oy + y * C, C + 0.5, C + 0.5);
+      k.strokeStyle = 'rgba(140,180,255,0.13)'; k.lineWidth = 1; k.strokeRect(ox + x * C + 0.5, oy + y * C + 0.5, C - 1, C - 1);
+      k.fillStyle = 'rgba(140,180,255,0.10)'; k.beginPath(); k.arc(ox + x * C + C / 2, oy + y * C + C / 2, C * 0.06, 0, 7); k.fill();
     }
     boardCache = c;
   }
@@ -62,43 +63,34 @@
     return { x: ox + x * C - gap - T, y: oy + y * C + inset, w: T, h: e.len * C - inset * 2 };
   }
   function drawExit(e, i, t) {
-    var r = exitRect(e), open = Engine.exitOpen(P, state, i), cx = r.x + r.w / 2, cy = r.y + r.h / 2, s = C;
+    var r = exitRect(e), open = Engine.exitOpen(P, state, i), cx = r.x + r.w / 2, cy = r.y + r.h / 2, d = DIRS[e.side], px = -d[1], py = d[0];
     g.save();
-    if (open) { g.shadowColor = COLOURS[e.c]; g.shadowBlur = C * (0.35 + 0.12 * Math.sin(t * 3 + i)); }
-    var grd = g.createLinearGradient(r.x, r.y, r.x, r.y + r.h);
-    grd.addColorStop(0, open ? LIGHT[e.c] : '#b9bccb'); grd.addColorStop(1, open ? COLOURS[e.c] : '#8e93a6');
-    g.fillStyle = grd; rr(g, r.x, r.y, r.w, r.h, C * 0.2); g.fill(); g.shadowBlur = 0;
-    g.strokeStyle = open ? DARK[e.c] : COLOURS[e.c]; g.lineWidth = open ? Math.max(2, C * 0.04) : Math.max(3, C * 0.07); g.stroke();
-    if (open) { // outward chevrons
-      var d = DIRS[e.side], px = -d[1], py = d[0], a = s * 0.11, wob = Math.sin(t * 4 + i) * C * 0.03;
-      g.strokeStyle = '#fff'; g.lineWidth = Math.max(3, C * 0.065); g.lineCap = 'round'; g.lineJoin = 'round';
-      for (var n = -1; n <= 1; n += 2) {
-        var bx = cx + d[0] * (n * a * 0.8 + wob), by = cy + d[1] * (n * a * 0.8 + wob);
-        g.beginPath(); g.moveTo(bx - d[0] * a + px * a * 1.2, by - d[1] * a + py * a * 1.2); g.lineTo(bx, by); g.lineTo(bx - d[0] * a - px * a * 1.2, by - d[1] * a - py * a * 1.2); g.stroke();
+    if (open) { g.shadowColor = COLOURS[e.c]; g.shadowBlur = C * (0.3 + 0.12 * Math.sin(t * 3 + i)); }
+    g.fillStyle = open ? DARK[e.c] : '#3b4a6e'; rr(g, r.x, r.y + C * 0.05, r.w, r.h, C * 0.14); g.fill(); g.shadowBlur = 0;
+    g.fillStyle = open ? COLOURS[e.c] : '#6d7c9e'; rr(g, r.x, r.y, r.w, r.h - C * 0.03, C * 0.14); g.fill();
+    if (open) { // row of chunky arrows pointing out, marching gently
+      var along = e.side % 2 === 0 ? r.w : r.h, n = Math.max(1, Math.round(along / C)), a = C * 0.14, wob = ((t * 0.8 + i * 0.3) % 1) * C * 0.06;
+      g.fillStyle = '#fff';
+      for (var k = 0; k < n; k++) {
+        var off = (k - (n - 1) / 2) * C, bx = cx + px * off + d[0] * (wob - C * 0.03), by = cy + py * off + d[1] * (wob - C * 0.03);
+        g.beginPath(); g.moveTo(bx + d[0] * a, by + d[1] * a); g.lineTo(bx - d[0] * a * 0.4 + px * a * 1.25, by - d[1] * a * 0.4 + py * a * 1.25);
+        g.lineTo(bx - d[0] * a * 0.4 - px * a * 1.25, by - d[1] * a * 0.4 - py * a * 1.25); g.closePath(); g.fill();
       }
-      // tiny colour-matched symbol beside the chevrons for colour-blind play
-    } else { // smiling padlock + dots
-      var L2 = Math.min(r.w, r.h) * 0.8, lx = cx, ly = cy + L2 * 0.12;
-      g.strokeStyle = '#eef0f6'; g.lineWidth = Math.max(2.5, L2 * 0.13);
-      g.beginPath(); g.arc(lx, ly - L2 * 0.28, L2 * 0.24, Math.PI, 0); g.stroke();
-      g.fillStyle = '#eef0f6'; rr(g, lx - L2 * 0.38, ly - L2 * 0.3, L2 * 0.76, L2 * 0.6, L2 * 0.14); g.fill();
-      g.fillStyle = '#3c4258'; g.beginPath(); g.arc(lx - L2 * 0.13, ly - L2 * 0.06, L2 * 0.05, 0, 7); g.arc(lx + L2 * 0.13, ly - L2 * 0.06, L2 * 0.05, 0, 7); g.fill();
-      g.strokeStyle = '#3c4258'; g.lineWidth = Math.max(1.5, L2 * 0.05); g.beginPath(); g.arc(lx, ly + L2 * 0.04, L2 * 0.1, 0.2, Math.PI - 0.2); g.stroke();
-      // progress dots, placed further out from the wall
-      var need = e.need, have = Engine.clearedCount(state), dd = DIRS[e.side], dr = C * 0.1;
-      var bx2 = cx + dd[0] * (C * 0.5), by2 = cy + dd[1] * (C * 0.5), qx = -dd[1], qy = dd[0], spacing = dr * 2.6;
-      for (var k = 0; k < need; k++) {
-        var off = (k - (need - 1) / 2) * spacing;
-        g.beginPath(); g.arc(bx2 + qx * off, by2 + qy * off, dr, 0, 7);
-        g.fillStyle = k < have ? COLOURS[e.c] : 'rgba(255,255,255,0.18)'; g.fill();
-        g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1.5; g.stroke();
-      }
+    } else { // gate: colour stripes + big countdown number
+      g.save(); rr(g, r.x, r.y, r.w, r.h - C * 0.03, C * 0.14); g.clip();
+      g.strokeStyle = COLOURS[e.c]; g.lineWidth = C * 0.09;
+      for (var q = -r.w - r.h; q < r.w + r.h; q += C * 0.26) { g.beginPath(); g.moveTo(r.x + q, r.y); g.lineTo(r.x + q + r.h, r.y + r.h); g.stroke(); }
+      g.restore();
+      var left = Math.max(0, e.need - Engine.clearedCount(state)), rad = Math.min(r.w, r.h) * 0.42;
+      g.fillStyle = '#1b2547'; g.beginPath(); g.arc(cx, cy, rad, 0, 7); g.fill(); g.strokeStyle = COLOURS[e.c]; g.lineWidth = Math.max(2, C * 0.05); g.stroke();
+      g.fillStyle = '#fff'; g.font = '900 ' + Math.round(rad * 1.3) + 'px ui-rounded, Nunito, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(left), cx, cy + rad * 0.06);
+      // meter pips further out
+      var need = e.need, have = Engine.clearedCount(state), dr = C * 0.085, bx2 = cx + d[0] * C * 0.48, by2 = cy + d[1] * C * 0.48;
+      for (var m = 0; m < need; m++) { var o2 = (m - (need - 1) / 2) * dr * 2.6;
+        g.fillStyle = m < have ? COLOURS[e.c] : 'rgba(255,255,255,0.2)'; rr(g, bx2 + px * o2 - dr, by2 + py * o2 - dr, dr * 2, dr * 2, dr * 0.4); g.fill(); }
     }
-    // colour symbol chip so the gate's colour is also a shape
-    if (open) {
-      var d2 = DIRS[e.side], sx = cx + d2[0] * C * 0.5, sy = cy + d2[1] * C * 0.5;
-      if (sx > 0 && sy > 0 && sx < W && sy < H) { g.fillStyle = COLOURS[e.c]; g.beginPath(); g.arc(sx, sy, C * 0.15, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); symbol(e.c, sx, sy, C * 0.17, '#fff'); }
-    }
+    if (open) { var sx = cx + d[0] * C * 0.5, sy = cy + d[1] * C * 0.5;
+      if (sx > 0 && sy > 0 && sx < W && sy < H) { g.fillStyle = COLOURS[e.c]; g.beginPath(); g.arc(sx, sy, C * 0.15, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); symbol(e.c, sx, sy, C * 0.17, '#fff'); } }
     g.restore();
   }
   function symbol(c, x, y, s, col) {
@@ -114,19 +106,22 @@
     var b = L.blocks[i], m = C * 0.07, w = b.w * C - m * 2, h = b.h * C - m * 2, px = ox + x * C + m, py = oy + y * C + m;
     g.save(); g.globalAlpha = alpha;
     if (scale !== 1) { g.translate(px + w / 2, py + h / 2); g.scale(scale, scale); g.translate(-(px + w / 2), -(py + h / 2)); }
-    var r = C * 0.3;
-    g.fillStyle = 'rgba(0,0,0,0.35)'; rr(g, px, py + C * 0.06, w, h, r); g.fill();
-    var grd = g.createLinearGradient(px, py, px, py + h); grd.addColorStop(0, LIGHT[b.c]); grd.addColorStop(0.55, COLOURS[b.c]); grd.addColorStop(1, DARK[b.c]);
-    g.fillStyle = grd; rr(g, px, py, w, h, r); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.28)'; rr(g, px + w * 0.14, py + C * 0.07, w * 0.5, C * 0.1, C * 0.05); g.fill();
-    var cx = px + w / 2, cy = py + h / 2, blink = (t + blinkT[i]) % 4.2 < 0.12;
-    if (b.a !== undefined) { Animals.draw(g, b.a, cx, cy, C * Math.min(b.w, b.h), look, blink, t + blinkT[i]); symbol(b.c, px + w - C * 0.17, py + h - C * 0.17, C * 0.2, 'rgba(255,255,255,0.95)'); g.restore(); return; }
-    symbol(b.c, cx, cy + C * 0.12 * Math.min(b.w, b.h), C * 0.32 * Math.min(b.w, b.h), 'rgba(255,255,255,0.95)');
-    var ey = cy - C * 0.17, ex = C * 0.12, lx = look[0] * C * 0.035, ly = look[1] * C * 0.035;
-    for (var s = -1; s <= 1; s += 2) {
-      if (blink) { g.strokeStyle = '#1b1f33'; g.lineWidth = C * 0.03; g.beginPath(); g.moveTo(cx + s * ex - C * 0.04, ey); g.lineTo(cx + s * ex + C * 0.04, ey); g.stroke(); continue; }
-      g.fillStyle = '#fff'; g.beginPath(); g.arc(cx + s * ex, ey, C * 0.07, 0, 7); g.fill();
-      g.fillStyle = '#1b1f33'; g.beginPath(); g.arc(cx + s * ex + lx, ey + ly, C * 0.04, 0, 7); g.fill();
+    var r = C * 0.16, side = C * 0.09;
+    g.fillStyle = 'rgba(0,0,0,0.4)'; rr(g, px + C * 0.03, py + C * 0.08, w, h, r); g.fill();
+    g.fillStyle = DARK[b.c]; rr(g, px, py, w, h, r); g.fill();                      // brick side
+    var grd = g.createLinearGradient(px, py, px, py + h); grd.addColorStop(0, LIGHT[b.c]); grd.addColorStop(0.35, COLOURS[b.c]); grd.addColorStop(1, COLOURS[b.c]);
+    g.fillStyle = grd; rr(g, px, py, w, h - side, r); g.fill();                     // top face
+    g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = Math.max(1, C * 0.025); rr(g, px + 1, py + 1, w - 2, h - side - 2, r); g.stroke();
+    var cx = px + w / 2, cy = py + (h - side) / 2, blink = (t + blinkT[i]) % 4.2 < 0.12, sz = Math.min(b.w, b.h);
+    if (b.a !== undefined) { Animals.draw(g, b.a, cx, cy, C * sz, look, blink, t + blinkT[i]); symbol(b.c, px + w - C * 0.17, py + h - side - C * 0.15, C * 0.2, 'rgba(255,255,255,0.95)'); g.restore(); return; }
+    // rounded pebble studs, one per cell; the first carries the colour symbol
+    for (var sy2 = 0; sy2 < b.h; sy2++) for (var sx2 = 0; sx2 < b.w; sx2++) {
+      var qx = ox + (x + sx2 + 0.5) * C, qy = oy + (y + sy2 + 0.5) * C - side * 0.5, sr = C * 0.24;
+      g.fillStyle = DARK[b.c]; g.beginPath(); g.ellipse(qx, qy + C * 0.05, sr, sr * 0.9, 0, 0, 7); g.fill();
+      var sg = g.createRadialGradient(qx - sr * 0.35, qy - sr * 0.4, sr * 0.1, qx, qy, sr); sg.addColorStop(0, LIGHT[b.c]); sg.addColorStop(1, COLOURS[b.c]);
+      g.fillStyle = sg; g.beginPath(); g.ellipse(qx, qy, sr, sr * 0.9, 0, 0, 7); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.ellipse(qx - sr * 0.35, qy - sr * 0.4, sr * 0.28, sr * 0.16, -0.5, 0, 7); g.fill();
+      if (!sx2 && !sy2) symbol(b.c, qx, qy + sr * 0.05, sr * 0.9, 'rgba(255,255,255,0.9)');
     }
     g.restore();
   }
@@ -160,6 +155,10 @@
   }
   function burst(r, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.28, v = 60 + Math.random() * 120;
     sparks.push({ x: r.x + r.w / 2, y: r.y + r.h / 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, gy: 60, t: 0, life: 0.6 + Math.random() * 0.3, c: Math.random() < 0.5 ? '#fff6c8' : col, s: 3 + Math.random() * 4, rot: 0, vr: 6 }); } }
+  function crumble(i, from, D) { var b = L.blocks[i], n = 10 + 6 * b.w * b.h;
+    for (var k = 0; k < n; k++) { var fx = from[0] + Math.random() * b.w, fy = from[1] + Math.random() * b.h, v = 40 + Math.random() * 140;
+      sparks.push({ x: ox + fx * C, y: oy + fy * C, vx: D[0] * v + (Math.random() - 0.5) * 80, vy: D[1] * v - 60 * Math.random(), gy: 520, t: 0, life: 0.6 + Math.random() * 0.4,
+        c: [COLOURS[b.c], DARK[b.c], LIGHT[b.c]][k % 3], s: C * (0.06 + Math.random() * 0.1), rot: Math.random() * 6, vr: (Math.random() - 0.5) * 14 }); } }
   function hearts(x, y) { for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, v = 90 + Math.random() * 90;
     sparks.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, gy: 40, t: 0, life: 0.9 + Math.random() * 0.4, c: ['#ff8fb1', '#ffd84a', '#fff'][i % 3], s: 6 + Math.random() * 4, rot: 0, vr: 0, heart: true }); } }
   function petals() { for (var i = 0; i < 70; i++) sparks.push({ x: Math.random() * W, y: -20 - Math.random() * H * 0.4, vx: (Math.random() - 0.5) * 40, vy: 60 + Math.random() * 80, gy: 10,
@@ -242,6 +241,7 @@
     var D = DIRS[dir], b = L.blocks[i];
     moves++; drag = null;
     flyers.push({ i: i, x: vis[i].x, y: vis[i].y, d: D, t: 0 });
+    crumble(i, from, D);
     Sfx.whoosh();
     if (b.a !== undefined) { Sfx.squeak(b.a); hearts(ox + (from[0] + b.w / 2) * C, oy + (from[1] + b.h / 2) * C); }
     checkWin();
