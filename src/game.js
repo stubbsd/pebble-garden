@@ -120,8 +120,8 @@
     g.fillStyle = grd; rr(g, px, py, w, h, r); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.28)'; rr(g, px + w * 0.14, py + C * 0.07, w * 0.5, C * 0.1, C * 0.05); g.fill();
     var cx = px + w / 2, cy = py + h / 2, blink = (t + blinkT[i]) % 4.2 < 0.12;
-    if (b.a !== undefined) { Animals.draw(g, b.a, cx, cy, C, look, blink, t + blinkT[i]); symbol(b.c, px + w - C * 0.17, py + h - C * 0.17, C * 0.2, 'rgba(255,255,255,0.95)'); g.restore(); return; }
-    symbol(b.c, cx, cy + C * 0.12, C * 0.32, 'rgba(255,255,255,0.95)');
+    if (b.a !== undefined) { Animals.draw(g, b.a, cx, cy, C * Math.min(b.w, b.h), look, blink, t + blinkT[i]); symbol(b.c, px + w - C * 0.17, py + h - C * 0.17, C * 0.2, 'rgba(255,255,255,0.95)'); g.restore(); return; }
+    symbol(b.c, cx, cy + C * 0.12 * Math.min(b.w, b.h), C * 0.32 * Math.min(b.w, b.h), 'rgba(255,255,255,0.95)');
     var ey = cy - C * 0.17, ex = C * 0.12, lx = look[0] * C * 0.035, ly = look[1] * C * 0.035;
     for (var s = -1; s <= 1; s += 2) {
       if (blink) { g.strokeStyle = '#1b1f33'; g.lineWidth = C * 0.03; g.beginPath(); g.moveTo(cx + s * ex - C * 0.04, ey); g.lineTo(cx + s * ex + C * 0.04, ey); g.stroke(); continue; }
