@@ -107,6 +107,7 @@
     g.save(); g.globalAlpha = alpha;
     if (scale !== 1) { g.translate(px + w / 2, py + h / 2); g.scale(scale, scale); g.translate(-(px + w / 2), -(py + h / 2)); }
     var r = C * 0.16, side = C * 0.09;
+    if (b.cells) { drawPoly(b, i, x, y, m, r, side, look, t); g.restore(); return; }
     g.fillStyle = 'rgba(0,0,0,0.4)'; rr(g, px + C * 0.03, py + C * 0.08, w, h, r); g.fill();
     g.fillStyle = DARK[b.c]; rr(g, px, py, w, h, r); g.fill();                      // brick side
     var grd = g.createLinearGradient(px, py, px, py + h); grd.addColorStop(0, LIGHT[b.c]); grd.addColorStop(0.35, COLOURS[b.c]); grd.addColorStop(1, COLOURS[b.c]);
@@ -124,6 +125,35 @@
       if (!sx2 && !sy2) symbol(b.c, qx, qy + sr * 0.05, sr * 0.9, 'rgba(255,255,255,0.9)');
     }
     g.restore();
+  }
+  // Polyomino brick: cells joined into one chunky piece (cell rounded rects + seam bridges).
+  function polyPath(cs, x0, y0, m, r, shrinkB) {
+    var has = {}; cs.forEach(function (c) { has[c[0] + ',' + c[1]] = 1; });
+    g.beginPath();
+    cs.forEach(function (c) {
+      var l = has[(c[0] - 1) + ',' + c[1]] ? 0 : m, rt = has[(c[0] + 1) + ',' + c[1]] ? 0 : m, tp = has[c[0] + ',' + (c[1] - 1)] ? 0 : m, bt = has[c[0] + ',' + (c[1] + 1)] ? 0 : m + shrinkB;
+      var X = x0 + c[0] * C, Y = y0 + c[1] * C, rad = (l && tp && rt && bt) ? r : Math.min(r, C * 0.12);
+      if (l && rt) { rrSub(X + l, Y + tp, C - l - rt, C - tp - bt, rad); }
+      else g.rect(X + l, Y + tp, C - l - rt, C - tp - bt);
+    });
+  }
+  function rrSub(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  function drawPoly(b, i, x, y, m, r, side, look, t) {
+    var cs = Engine.cellsOf(b), x0 = ox + x * C, y0 = oy + y * C;
+    g.fillStyle = 'rgba(0,0,0,0.4)'; g.save(); g.translate(C * 0.03, C * 0.08); polyPath(cs, x0, y0, m, r, 0); g.fill('nonzero'); g.restore();
+    g.fillStyle = DARK[b.c]; polyPath(cs, x0, y0, m, r, 0); g.fill('nonzero');
+    var grd = g.createLinearGradient(0, y0, 0, y0 + b.h * C); grd.addColorStop(0, LIGHT[b.c]); grd.addColorStop(0.3, COLOURS[b.c]); grd.addColorStop(1, COLOURS[b.c]);
+    g.fillStyle = grd; polyPath(cs, x0, y0, m, r, side); g.fill('nonzero');
+    cs.forEach(function (c, k) {
+      var qx = x0 + (c[0] + 0.5) * C, qy = y0 + (c[1] + 0.5) * C - side * 0.5, sr = C * 0.24;
+      if (k === 0 && b.a !== undefined) return;
+      g.fillStyle = DARK[b.c]; g.beginPath(); g.ellipse(qx, qy + C * 0.05, sr, sr * 0.9, 0, 0, 7); g.fill();
+      var sg = g.createRadialGradient(qx - sr * 0.35, qy - sr * 0.4, sr * 0.1, qx, qy, sr); sg.addColorStop(0, LIGHT[b.c]); sg.addColorStop(1, COLOURS[b.c]);
+      g.fillStyle = sg; g.beginPath(); g.ellipse(qx, qy, sr, sr * 0.9, 0, 0, 7); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.ellipse(qx - sr * 0.35, qy - sr * 0.4, sr * 0.28, sr * 0.16, -0.5, 0, 7); g.fill();
+      if (k === (b.a !== undefined ? 1 : 0)) symbol(b.c, qx, qy + sr * 0.05, sr * 0.9, 'rgba(255,255,255,0.9)');
+    });
+    if (b.a !== undefined) { var c0 = cs[0]; Animals.draw(g, b.a, x0 + (c0[0] + 0.5) * C, y0 + (c0[1] + 0.5) * C - side * 0.5, C, look, (t + blinkT[i]) % 4.2 < 0.12, t + blinkT[i]); }
   }
   function frame(now) {
     requestAnimationFrame(frame);
@@ -155,8 +185,8 @@
   }
   function burst(r, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.28, v = 60 + Math.random() * 120;
     sparks.push({ x: r.x + r.w / 2, y: r.y + r.h / 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, gy: 60, t: 0, life: 0.6 + Math.random() * 0.3, c: Math.random() < 0.5 ? '#fff6c8' : col, s: 3 + Math.random() * 4, rot: 0, vr: 6 }); } }
-  function crumble(i, from, D) { var b = L.blocks[i], n = 10 + 6 * b.w * b.h;
-    for (var k = 0; k < n; k++) { var fx = from[0] + Math.random() * b.w, fy = from[1] + Math.random() * b.h, v = 40 + Math.random() * 140;
+  function crumble(i, from, D) { var b = L.blocks[i], cs = Engine.cellsOf(b), n = 10 + 6 * cs.length;
+    for (var k = 0; k < n; k++) { var cc = cs[k % cs.length], fx = from[0] + cc[0] + Math.random(), fy = from[1] + cc[1] + Math.random(), v = 40 + Math.random() * 140;
       sparks.push({ x: ox + fx * C, y: oy + fy * C, vx: D[0] * v + (Math.random() - 0.5) * 80, vy: D[1] * v - 60 * Math.random(), gy: 520, t: 0, life: 0.6 + Math.random() * 0.4,
         c: [COLOURS[b.c], DARK[b.c], LIGHT[b.c]][k % 3], s: C * (0.06 + Math.random() * 0.1), rot: Math.random() * 6, vr: (Math.random() - 0.5) * 14 }); } }
   function hearts(x, y) { for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, v = 90 + Math.random() * 90;
@@ -198,7 +228,9 @@
   function blockAt(fx, fy) {
     var best = -1, bd = 0.35; // small forgiveness for chunky fingers
     for (var i = 0; i < L.blocks.length; i++) { if (!state[i]) continue; var b = L.blocks[i];
-      var dx = Math.max(state[i][0] - fx, 0, fx - (state[i][0] + b.w)), dy = Math.max(state[i][1] - fy, 0, fy - (state[i][1] + b.h)), d = Math.max(dx, dy);
+      var d = 9, cs = Engine.cellsOf(b);
+      for (var j = 0; j < cs.length; j++) { var X = state[i][0] + cs[j][0], Y = state[i][1] + cs[j][1];
+        d = Math.min(d, Math.max(Math.max(X - fx, 0, fx - (X + 1)), Math.max(Y - fy, 0, fy - (Y + 1)))); }
       if (d < bd || (d === 0 && bd > 0)) { bd = d; best = i; if (d === 0) break; } }
     return best;
   }
@@ -243,7 +275,7 @@
     flyers.push({ i: i, x: vis[i].x, y: vis[i].y, d: D, t: 0 });
     crumble(i, from, D);
     Sfx.whoosh();
-    if (b.a !== undefined) { Sfx.squeak(b.a); hearts(ox + (from[0] + b.w / 2) * C, oy + (from[1] + b.h / 2) * C); }
+    if (b.a !== undefined) { Sfx.squeak(b.a); hearts(ox + (from[0] + Engine.cellsOf(b)[0][0] + 0.5) * C, oy + (from[1] + Engine.cellsOf(b)[0][1] + 0.5) * C); }
     checkWin();
   }
   function endDrag(ev) {

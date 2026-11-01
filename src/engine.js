@@ -16,6 +16,20 @@
     });
     return { L: L, floor: floor, exitAt: exitAt, n: L.blocks.length };
   }
+  // Block cells as [dx,dy] offsets: b.cells for polyominoes (L, T, skew...), else the w x h rectangle.
+  function cellsOf(b) {
+    if (b._c) return b._c;
+    var c = b.cells ? b.cells.slice() : [];
+    if (!b.cells) for (var dy = 0; dy < b.h; dy++) for (var dx = 0; dx < b.w; dx++) c.push([dx, dy]);
+    Object.defineProperty(b, '_c', { value: c, enumerable: false }); return c;
+  }
+  // Leading edge in dir: the front-most cell of each row/column slice. A block leaves only when
+  // every leading cell sits on the same matching exit (so an L leaves through its flat side).
+  function leading(b, dir) {
+    var best = {}, d = DIRS[dir];
+    cellsOf(b).forEach(function (c) { var k = dir % 2 === 0 ? c[0] : c[1], v = c[0] * d[0] + c[1] * d[1]; if (!best[k] || v > best[k].v) best[k] = { v: v, c: c }; });
+    return Object.keys(best).map(function (k) { return best[k].c; });
+  }
   function isFloor(P, x, y) { return x >= 0 && y >= 0 && x < P.L.w && y < P.L.h && P.floor[y * P.L.w + x]; }
   function initState(P) { return P.L.blocks.map(function (b) { return [b.x, b.y]; }); }
   function clearedCount(s) { var c = 0; for (var i = 0; i < s.length; i++) if (!s[i]) c++; return c; }
@@ -23,15 +37,14 @@
     var o = new Int16Array(P.L.w * P.L.h).fill(-1);
     for (var i = 0; i < s.length; i++) {
       if (!s[i] || i === skip) continue;
-      var b = P.L.blocks[i];
-      for (var dy = 0; dy < b.h; dy++) for (var dx = 0; dx < b.w; dx++) o[(s[i][1] + dy) * P.L.w + s[i][0] + dx] = i;
+      var cs = cellsOf(P.L.blocks[i]);
+      for (var j = 0; j < cs.length; j++) o[(s[i][1] + cs[j][1]) * P.L.w + s[i][0] + cs[j][0]] = i;
     }
     return o;
   }
   function fits(P, o, b, x, y) {
-    for (var dy = 0; dy < b.h; dy++) for (var dx = 0; dx < b.w; dx++) {
-      if (!isFloor(P, x + dx, y + dy) || o[(y + dy) * P.L.w + x + dx] >= 0) return false;
-    }
+    var cs = cellsOf(b);
+    for (var j = 0; j < cs.length; j++) { var cx = x + cs[j][0], cy = y + cs[j][1]; if (!isFloor(P, cx, cy) || o[cy * P.L.w + cx] >= 0) return false; }
     return true;
   }
   // How far block i can slide in dir (cells).
@@ -47,10 +60,7 @@
     o = o || occ(P, s, i);
     var b = P.L.blocks[i], k = maxSlide(P, s, i, dir, o), d = DIRS[dir];
     var x = s[i][0] + d[0] * k, y = s[i][1] + d[1] * k, cells = [];
-    if (dir === 0) for (var a = 0; a < b.w; a++) cells.push([x + a, y]);
-    if (dir === 2) for (a = 0; a < b.w; a++) cells.push([x + a, y + b.h - 1]);
-    if (dir === 1) for (a = 0; a < b.h; a++) cells.push([x + b.w - 1, y + a]);
-    if (dir === 3) for (a = 0; a < b.h; a++) cells.push([x, y + a]);
+    cells = leading(b, dir).map(function (c) { return [x + c[0], y + c[1]]; });
     var ex = -1;
     for (var c = 0; c < cells.length; c++) {
       var cx = cells[c][0], cy = cells[c][1];
@@ -109,10 +119,7 @@
   // A step moves block i one cell in dir, or out through a matching open exit.
   function canLeave(P, s, i, dir, o) {
     var b = P.L.blocks[i], d = DIRS[dir], x = s[i][0], y = s[i][1], cells = [], a;
-    if (dir === 0) for (a = 0; a < b.w; a++) cells.push([x + a, y]);
-    if (dir === 2) for (a = 0; a < b.w; a++) cells.push([x + a, y + b.h - 1]);
-    if (dir === 1) for (a = 0; a < b.h; a++) cells.push([x + b.w - 1, y + a]);
-    if (dir === 3) for (a = 0; a < b.h; a++) cells.push([x, y + a]);
+    cells = leading(b, dir).map(function (c) { return [x + c[0], y + c[1]]; });
     var ex = -1;
     for (var c = 0; c < cells.length; c++) {
       var e = P.exitAt[cells[c][0] + ',' + cells[c][1] + ',' + dir];
@@ -144,7 +151,7 @@
   function solveSteps(L, cap) {
     var P = prepare(L), start = initState(P), dm = distMaps(P), W = L.w;
     cap = cap || 200000;
-    function h(s) { var t = 0; for (var i = 0; i < s.length; i++) if (s[i]) { var m = dm[L.blocks[i].c]; t += (m ? m[s[i][1] * W + s[i][0]] : 99) + 1; } return t; }
+    function h(s) { var t = 0; for (var i = 0; i < s.length; i++) if (s[i]) { var m = dm[L.blocks[i].c]; var c0 = cellsOf(L.blocks[i])[0]; t += (m ? Math.min(99, m[(s[i][1] + c0[1]) * W + s[i][0] + c0[0]]) : 99) + 1; } return t; }
     var heap = [], seen = new Map();
     function push(it) { heap.push(it); var c = heap.length - 1; while (c) { var p = (c - 1) >> 1; if (heap[p].f <= it.f) break; heap[c] = heap[p]; c = p; } heap[c] = it; }
     function pop() { var top = heap[0], last = heap.pop(); if (heap.length) { var c = 0; for (;;) { var l = 2 * c + 1, r = l + 1, m = c;
@@ -178,7 +185,7 @@
     return clearedCount(s) === s.length;
   }
   function drags(sol) { var n = 0; for (var m = 0; m < sol.length; m++) if (!m || sol[m][0] !== sol[m - 1][0] || sol[m][1] !== sol[m - 1][1]) n++; return n; }
-  var api = { canLeave: canLeave, step: step, solveSteps: solveSteps, verifySteps: verifySteps, drags: drags, DIRS: DIRS, prepare: prepare, isFloor: isFloor, initState: initState, clearedCount: clearedCount,
+  var api = { cellsOf: cellsOf, leading: leading, canLeave: canLeave, step: step, solveSteps: solveSteps, verifySteps: verifySteps, drags: drags, DIRS: DIRS, prepare: prepare, isFloor: isFloor, initState: initState, clearedCount: clearedCount,
     occ: occ, fits: fits, maxSlide: maxSlide, exitFor: exitFor, exitOpen: exitOpen, applyMove: applyMove, solve: solve, verify: verify };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Engine = api;
 })(this);
